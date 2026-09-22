@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Fotovoltaico</title>
+  <link rel="stylesheet" href="diseño.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <div>
+        <h1>Dashboard Fotovoltaico</h1>
+        <p class="subtitle">Monitoreo en tiempo real · ESP32 + INA219</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="statusIndicator" class="status-badge offline">
+        <span class="status-dot"></span>
+        <span id="statusText">Desconectado</span>
+      </div>
+      <div class="header-time">
+        <span id="ultimaActualizacion">--:--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== ESTADO DEL SISTEMA ===== -->
+  <section class="system-status" id="systemStatus">
+    <div class="system-status-content">
+      <div class="system-status-left">
+        <span class="system-status-icon" id="systemStatusIcon"></span>
+        <div>
+          <div class="system-status-title" id="systemStatusTitle">Sistema Estable</div>
+          <div class="system-status-desc" id="systemStatusDesc">Batería cargada, consumo mínimo</div>
+        </div>
+      </div>
+      <div class="system-status-right">
+        <div class="system-status-badge" id="systemStatusBadge">ESTABLE</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Voltaje</span>
+        <span class="metric-icon"></span>
+      </div>
+      <div class="metric-value">
+        <span id="voltaje">--</span>
+        <span class="metric-unit">V</span>
+      </div>
+      <div class="metric-trend" id="trendVoltaje">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Corriente</span>
+        <span class="metric-icon"></span>
+      </div>
+      <div class="metric-value">
+        <span id="corriente">--</span>
+        <span class="metric-unit">mA</span>
+      </div>
+      <div class="metric-trend" id="trendCorriente">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Potencia</span>
+        <span class="metric-icon"></span>
+      </div>
+      <div class="metric-value">
+        <span id="potencia">--</span>
+        <span class="metric-unit">mW</span>
+      </div>
+      <div class="metric-trend" id="trendPotencia">--</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-header">
+        <span class="metric-label">Estado</span>
+        <span class="metric-icon" id="estadoIcon"></span>
+      </div>
+      <div class="metric-value" id="estado" style="font-size: 22px;">--</div>
+      <div class="metric-trend" id="trendEstado">--</div>
+    </div>
+  </section>
+
+  <section class="battery-section">
+    <div class="battery-header">
+      <div>
+        <h2> Nivel de Batería</h2>
+        <p class="battery-subtitle">Rango: 3.0V (0%) — 4.2V (100%)</p>
+      </div>
+      <div class="battery-percent" id="batteryPercent">--%</div>
+    </div>
+    <div class="battery-bar">
+      <div class="battery-fill" id="batteryFill" style="width: 0%;"></div>
+    </div>
+    <div class="battery-details">
+      <div class="battery-detail">
+        <span class="detail-label">Voltaje actual</span>
+        <span class="detail-value" id="batteryVoltaje">-- V</span>
+      </div>
+      <div class="battery-detail">
+        <span class="detail-label">Tiempo restante est.</span>
+        <span class="detail-value" id="tiempoRestante">-- min</span>
+      </div>
+      <div class="battery-detail">
+        <span class="detail-label">Estado</span>
+        <span class="detail-value" id="batteryEstado">--</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="charts-section">
+    <h2 class="section-title">Gráficas en Tiempo Real <span class="hint">(click para ampliar)</span></h2>
+    <div class="charts-grid">
+      <div class="chart-card" data-chart="voltaje">
+        <div class="chart-header">
+          <h3>Voltaje de Batería</h3>
+          <span class="chart-current" id="chartVoltajeActual">-- V</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartVoltaje"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" data-chart="corriente">
+        <div class="chart-header">
+          <h3>Corriente de Batería</h3>
+          <span class="chart-current" id="chartCorrienteActual">-- mA</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartCorriente"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" data-chart="potencia">
+        <div class="chart-header">
+          <h3>Potencia Instantánea</h3>
+          <span class="chart-current" id="chartPotenciaActual">-- mW</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartPotencia"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" data-chart="bateria">
+        <div class="chart-header">
+          <h3>Nivel de Batería</h3>
+          <span class="chart-current" id="chartBateriaActual">-- %</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartBateria"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats-section">
+    <h2 class="section-title">Estadísticas en Tiempo Real</h2>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Voltaje Promedio</div>
+        <div class="stat-value" id="statVoltajeProm">-- V</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Voltaje Máx / Mín</div>
+        <div class="stat-value" id="statVoltajeMaxMin">-- / -- V</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Corriente Promedio</div>
+        <div class="stat-value" id="statCorrienteProm">-- mA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Potencia Promedio</div>
+        <div class="stat-value" id="statPotenciaProm">-- mW</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Muestras</div>
+        <div class="stat-value" id="statMuestras">--</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <h2 class="section-title">Últimas Lecturas</h2>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Hora</th>
+            <th>Voltaje</th>
+            <th>Corriente</th>
+            <th>Potencia</th>
+            <th>Estado</th>
+            <th>Batería</th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody">
+          <tr><td colspan="7" class="empty">Esperando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Sistema de Monitoreo Fotovoltaico · ESP32 + INA219</p>
+    <p>Actualización cada <span id="intervalo">1000</span> ms</p>
+  </footer>
+
+  <!-- ===== MODAL GRÁFICA EXPANDIDA ===== -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Gráfica Expandida</h2>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-chart-container">
+        <canvas id="modalChart"></canvas>
+      </div>
+      <div class="modal-stats" id="modalStats"></div>
+    </div>
+  </div>
+
+  <!-- ===== BOTÓN PEQUEÑO DE ESCENARIOS (ESQUINA INFERIOR) ===== -->
+  <button class="scenarios-toggle" id="scenariosToggle" title="Cambiar escenario de simulación">
+    <span class="scenarios-icon"></span>
+  </button>
+
+  <!-- ===== PANEL DE ESCENARIOS (OCULTO POR DEFECTO) ===== -->
+  <div class="scenarios-panel" id="scenariosPanel">
+    <div class="scenarios-header">
+      <h3> Escenarios de Simulación</h3>
+      <button class="scenarios-close" id="scenariosClose">✕</button>
+    </div>
+    <div class="scenarios-info">
+      <p>Selecciona un escenario para ver cómo se comporta el sistema en diferentes situaciones.</p>
+    </div>
+    <div class="scenarios-list" id="scenariosList">
+      <!-- Se llena dinámicamente -->
+    </div>
+    <div class="scenarios-actions">
+      <button class="scenarios-btn scenarios-btn-secondary" id="btnLimpiar">
+        🗑️ Limpiar Historial
+      </button>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+</body>
+</html>
